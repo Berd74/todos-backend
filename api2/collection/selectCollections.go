@@ -9,10 +9,10 @@ import (
 )
 
 type Collection struct {
-	CollectionId string  `spanner:"collection_id"`
-	Name         string  `spanner:"name"`
-	Description  *string `spanner:"description"`
-	UserId       string  `spanner:"user_id"`
+	CollectionId string  `spanner:"collection_id" json:"collectionId"`
+	Name         string  `spanner:"name" json:"name"`
+	Description  *string `spanner:"description" json:"description"`
+	UserId       string  `spanner:"user_id" json:"userId"`
 }
 
 func SelectCollections(userIds []string) ([]Collection, error) {

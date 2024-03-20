@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/option"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"todoBackend/api2/collection"
 	"todoBackend/api2/errorResponse"
@@ -111,8 +112,15 @@ func main() {
 		fmt.Println(userId)
 		fmt.Println(body.Name)
 		fmt.Println(body.Description)
-		collection.CreateCollection(body.Name, body.Description, userId)
-
+		collection, err := collection.CreateCollection(body.Name, body.Description, userId)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			errorResponse.SendErrorResponse(c, errorResponse.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"collections": collection,
+		})
 	})
 
 	router.DELETE("/collection/:id", verifyToken, func(c *gin.Context) {
