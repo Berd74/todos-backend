@@ -32,7 +32,7 @@ func DeleteCollection(collectionId string, userId string) error {
 	}
 
 	if affectedRowsCount == 0 {
-		return response.ErrorResponse{Code: http.StatusNotFound, Message: fmt.Sprintf("No database found ", collectionId)}
+		return response.ErrorResponse{Code: http.StatusNotFound, Message: fmt.Sprintf("Item with this id not found %v", collectionId)}
 	}
 
 	return nil
