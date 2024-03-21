@@ -10,21 +10,36 @@ import (
 
 func DeleteCollection(collectionId string, userId string) error {
 
-	stmt := spanner.Statement{
-		SQL: `DELETE FROM collection WHERE collection_id = @collectionId AND user_id = @userId`,
-		Params: map[string]any{
-			"collectionId": collectionId,
-			"userId":       userId,
-		},
-	}
-
 	ctx := context.Background()
 
 	var affectedRowsCount int64
 	_, err := GetDatabase().ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		rowCount, err := txn.Update(ctx, stmt)
+
+		delTodoStmt := spanner.Statement{
+			SQL: `DELETE FROM todo WHERE collection_id IN (SELECT collection_id FROM collection WHERE collection_id = @collectionId AND user_id = @userId)`,
+			Params: map[string]any{
+				"collectionId": collectionId,
+				"userId":       userId,
+			},
+		}
+		_, err := txn.Update(ctx, delTodoStmt)
+		if err != nil {
+			return err
+		}
+
+		delCollectionStmt := spanner.Statement{
+			SQL: `DELETE FROM collection WHERE collection_id = @collectionId AND user_id = @userId`,
+			Params: map[string]any{
+				"collectionId": collectionId,
+				"userId":       userId,
+			},
+		}
+		rowCount, err := txn.Update(ctx, delCollectionStmt)
+		if err != nil {
+			return err
+		}
 		affectedRowsCount = rowCount
-		return err
+		return nil
 	})
 
 	if err != nil {

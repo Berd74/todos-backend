@@ -44,7 +44,7 @@ func init() {
 func main() {
 	router := gin.Default()
 
-	router.GET("/collections", verifyToken, func(c *gin.Context) {
+	router.GET("/allCollections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
 		role, _ := c.Get("role")
@@ -94,6 +94,11 @@ func main() {
 
 		response.SendOk(c, collection)
 	})
+
+	type CollectionInput struct {
+		Description string `json:"description"`
+		Name        string `json:"name"`
+	}
 
 	router.POST("/collection", verifyToken, func(c *gin.Context) {
 		var body CollectionInput
@@ -148,10 +153,22 @@ func main() {
 		response.SendOk(c, collection)
 	})
 
-	router.Run()
-}
+	router.DELETE("/allCollections", verifyToken, func(c *gin.Context) {
+		userId, _ := c.Get("userId")
+		userIdString := userId.(string)
 
-type CollectionInput struct {
-	Description string `json:"description"`
-	Name        string `json:"name"`
+		num, err := database.DeleteAllCollections(userIdString)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			response.SendError(c, err)
+			return
+		}
+
+		response.SendOk(c, map[string]any{
+			"removedItems": num,
+		})
+	})
+
+	router.Run()
 }
