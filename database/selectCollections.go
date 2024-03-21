@@ -5,7 +5,7 @@ import (
 	"context"
 	"google.golang.org/api/iterator"
 	"log"
-	"todoBackend/api2/model"
+	"todoBackend/model"
 )
 
 func SelectCollections(userIds []string) ([]model.Collection, error) {

@@ -4,8 +4,8 @@ import (
 	"cloud.google.com/go/spanner"
 	"context"
 	"github.com/google/uuid"
-	"todoBackend/api2/model"
-	"todoBackend/api2/utils"
+	"todoBackend/model"
+	"todoBackend/utils"
 )
 
 func CreateCollection(name string, description string, userId string) (*model.Collection, error) {

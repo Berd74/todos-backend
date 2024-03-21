@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"todoBackend/api2/database"
-	"todoBackend/api2/response"
+	database2 "todoBackend/database"
+	"todoBackend/response"
 )
 
 type Role int
@@ -45,22 +45,6 @@ func main() {
 	router := gin.Default()
 
 	// Use the middleware
-	router.GET("/test", verifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		role, _ := c.Get("role")
-
-		// Type assertion
-		userRole, _ := role.(Role)
-		// Print the result of the type assertion
-		fmt.Printf("%v", userRole)
-
-		c.JSON(http.StatusOK, gin.H{
-			"userId": userId,
-			"role":   role,
-		})
-	})
-
-	// Use the middleware
 	router.GET("/collections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
@@ -80,7 +64,7 @@ func main() {
 			userIds = []string{userIdString}
 		}
 
-		collections, err := database.SelectCollections(userIds)
+		collections, err := database2.SelectCollections(userIds)
 
 		fmt.Println(collections)
 		if err != nil {
@@ -101,7 +85,7 @@ func main() {
 
 		userId := c.GetString("userId")
 
-		collection, err := database.CreateCollection(body.Name, body.Description, userId)
+		collection, err := database2.CreateCollection(body.Name, body.Description, userId)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
@@ -117,7 +101,7 @@ func main() {
 
 		collectionId := c.Param("id")
 
-		err := database.DeleteCollection(collectionId, userIdString)
+		err := database2.DeleteCollection(collectionId, userIdString)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"todoBackend/api2/response"
+	"todoBackend/response"
 )
 
 func DeleteCollection(collectionId string, userId string) error {
