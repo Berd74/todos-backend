@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	database2 "todoBackend/database"
+	"todoBackend/database"
 	"todoBackend/response"
 )
 
@@ -44,7 +44,6 @@ func init() {
 func main() {
 	router := gin.Default()
 
-	// Use the middleware
 	router.GET("/collections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
@@ -64,9 +63,8 @@ func main() {
 			userIds = []string{userIdString}
 		}
 
-		collections, err := database2.SelectCollections(userIds)
+		collections, err := database.SelectCollections(userIds)
 
-		fmt.Println(collections)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
@@ -74,6 +72,28 @@ func main() {
 		}
 
 		response.SendOk(c, collections)
+	})
+
+	router.GET("/collection/:id", verifyToken, func(c *gin.Context) {
+		userId, _ := c.Get("userId")
+		role, _ := c.Get("role")
+		collectionId := c.Param("id")
+
+		collection, err := database.SelectCollection(collectionId)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			response.SendError(c, err)
+			return
+		}
+
+		if userId != collection.UserId && role != Admin {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
+			return
+		}
+		fmt.Println("5")
+
+		response.SendOk(c, collection)
 	})
 
 	router.POST("/collection", verifyToken, func(c *gin.Context) {
@@ -85,7 +105,7 @@ func main() {
 
 		userId := c.GetString("userId")
 
-		collection, err := database2.CreateCollection(body.Name, body.Description, userId)
+		collection, err := database.CreateCollection(body.Name, body.Description, userId)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
@@ -101,7 +121,7 @@ func main() {
 
 		collectionId := c.Param("id")
 
-		err := database2.DeleteCollection(collectionId, userIdString)
+		err := database.DeleteCollection(collectionId, userIdString)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
