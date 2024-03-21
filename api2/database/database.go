@@ -36,7 +36,7 @@ func init() {
 
 	// Creates a Spanner client.
 	ctx := context.Background()
-	client, err := spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName), option.WithCredentialsFile("todos-645f4-firebase-adminsdk-u8h0h-6f635bea6e.json"))
+	client, err := spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName), option.WithCredentialsFile("firebase-adminsdk.json"))
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}

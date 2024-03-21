@@ -1,27 +1,28 @@
-package collection
+package database
 
 import (
 	"cloud.google.com/go/spanner"
 	"context"
 	"github.com/google/uuid"
-	"todoBackend/api2/database"
+	"todoBackend/api2/model"
+	"todoBackend/api2/utils"
 )
 
-func CreateCollection(name string, description string, userId string) (*Collection, error) {
+func CreateCollection(name string, description string, userId string) (*model.Collection, error) {
 	collectionId := uuid.New().String() // Generate a new UUID.
 
-	newCollection := &Collection{
+	newCollection := &model.Collection{
 		CollectionId: collectionId,
 		Name:         name,
-		Description:  &description,
 		UserId:       userId,
+		Description:  utils.StringOrNil(description),
 	}
 
 	m, err := spanner.InsertOrUpdateStruct("collection", newCollection)
 	if err != nil {
 		return nil, err
 	}
-	_, err = database.GetDatabase().Apply(context.Background(), []*spanner.Mutation{m})
+	_, err = GetDatabase().Apply(context.Background(), []*spanner.Mutation{m})
 	if err != nil {
 		return nil, err
 	}

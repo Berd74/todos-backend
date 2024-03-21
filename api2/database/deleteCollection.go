@@ -1,12 +1,11 @@
-package collection
+package database
 
 import (
 	"cloud.google.com/go/spanner"
 	"context"
 	"fmt"
 	"net/http"
-	"todoBackend/api2/database"
-	"todoBackend/api2/errorResponse"
+	"todoBackend/api2/response"
 )
 
 func DeleteCollection(collectionId string, userId string) error {
@@ -22,7 +21,7 @@ func DeleteCollection(collectionId string, userId string) error {
 	ctx := context.Background()
 
 	var affectedRowsCount int64
-	_, err := database.GetDatabase().ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := GetDatabase().ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		rowCount, err := txn.Update(ctx, stmt)
 		affectedRowsCount = rowCount
 		return err
@@ -33,7 +32,7 @@ func DeleteCollection(collectionId string, userId string) error {
 	}
 
 	if affectedRowsCount == 0 {
-		return errorResponse.ErrorResponse{Code: http.StatusNotFound, Message: fmt.Sprintf("No collection found ", collectionId)}
+		return response.ErrorResponse{Code: http.StatusNotFound, Message: fmt.Sprintf("No database found ", collectionId)}
 	}
 
 	return nil

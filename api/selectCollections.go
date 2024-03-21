@@ -17,7 +17,7 @@ type Collection struct {
 func SelectCollections(userIds []string, limit int, offset int) ([]Collection, error) {
 	stmt := spanner.Statement{
 		SQL: `SELECT c.collection_id, c.name, c.description, c.user_id 
-              FROM collection c 
+              FROM database c 
               WHERE c.user_id IN UNNEST(@user_ids)`,
 		Params: map[string]interface{}{
 			"user_ids": userIds,

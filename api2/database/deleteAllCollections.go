@@ -1,9 +1,9 @@
-package collection
+package database
 
 func DeleteAllCollections() error {
 
 	//stmt := spanner.Statement{
-	//	SQL: `DELETE FROM collection WHERE collection_id = @collectionId`,
+	//	SQL: `DELETE FROM database WHERE collection_id = @collectionId`,
 	//	Params: map[string]any{
 	//		"collectionId": collectionId,
 	//	},
@@ -23,7 +23,7 @@ func DeleteAllCollections() error {
 	//}
 	//
 	//if affectedRowsCount == 0 {
-	//	return errorResponse.ErrorResponse{Code: http.StatusNotFound, Message: fmt.Sprintf("No collection found with ID %v", collectionId)}
+	//	return errorResponse.ErrorResponse{Code: http.StatusNotFound, Message: fmt.Sprintf("No database found with ID %v", collectionId)}
 	//}
 
 	return nil

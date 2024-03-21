@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"todoBackend/api2/collection"
-	"todoBackend/api2/errorResponse"
+	"todoBackend/api2/database"
+	"todoBackend/api2/response"
 )
 
 type Role int
@@ -27,7 +27,7 @@ var app *firebase.App
 var authClient *auth.Client
 
 func init() {
-	opt := option.WithCredentialsFile("todos-645f4-firebase-adminsdk-u8h0h-6f635bea6e.json")
+	opt := option.WithCredentialsFile("firebase-adminsdk.json")
 
 	var err error
 	app, err = firebase.NewApp(context.Background(), nil, opt)
@@ -80,7 +80,7 @@ func main() {
 			userIds = []string{userIdString}
 		}
 
-		collections, err := collection.SelectCollections(userIds)
+		collections, err := database.SelectCollections(userIds)
 
 		fmt.Println(collections)
 		if err != nil {
@@ -96,31 +96,22 @@ func main() {
 	})
 
 	router.POST("/collection", verifyToken, func(c *gin.Context) {
-		//convert body to object
 		var body CollectionInput
 		if err := c.BindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		//convert empty string to nil
-		//if body.Description != nil && *body.Description == "" {
-		//	body.Description = nil
-		//}
-		//other vars
+
 		userId := c.GetString("userId")
 
-		fmt.Println(userId)
-		fmt.Println(body.Name)
-		fmt.Println(body.Description)
-		collection, err := collection.CreateCollection(body.Name, body.Description, userId)
+		collection, err := database.CreateCollection(body.Name, body.Description, userId)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			errorResponse.SendErrorResponse(c, errorResponse.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"})
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"collections": collection,
-		})
+		response.SendOk(c, collection)
+
 	})
 
 	router.DELETE("/collection/:id", verifyToken, func(c *gin.Context) {
@@ -129,10 +120,10 @@ func main() {
 
 		collectionId := c.Param("id")
 
-		err := collection.DeleteCollection(collectionId, userIdString)
+		err := database.DeleteCollection(collectionId, userIdString)
 
 		if err != nil {
-			errorResponse.SendErrorResponse(c, err)
+			response.SendError(c, err)
 			return
 		}
 

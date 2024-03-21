@@ -1,10 +1,14 @@
-package errorResponse
+package response
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
+
+type OkResponse struct {
+	Data any `json:"data"`
+}
 
 type ErrorResponse struct {
 	Code    int    `json:"code"`
@@ -15,7 +19,11 @@ func (e ErrorResponse) Error() string {
 	return fmt.Sprintf("ErrorResponse: %v, %v", e.Code, e.Message)
 }
 
-func SendErrorResponse(c *gin.Context, err error) {
+func (e ErrorResponse) Send(c *gin.Context) {
+	SendError(c, e)
+}
+
+func SendError(c *gin.Context, err error) {
 	if err == nil {
 		return // No error, so just return
 	}
@@ -28,4 +36,14 @@ func SendErrorResponse(c *gin.Context, err error) {
 		// 'err' is not an ErrorResponse, so fall back to a default error response
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
+}
+
+func SendOk(c *gin.Context, data any) {
+	if data == nil {
+		c.Status(http.StatusOK)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": data,
+	})
 }
