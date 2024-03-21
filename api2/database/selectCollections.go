@@ -11,7 +11,7 @@ import (
 func SelectCollections(userIds []string) ([]model.Collection, error) {
 	stmt := spanner.Statement{
 		SQL: `SELECT c.collection_id, c.name, c.description, c.user_id 
-              FROM database c 
+              FROM collection c 
               WHERE c.user_id IN UNNEST(@user_ids)`,
 		Params: map[string]interface{}{
 			"user_ids": userIds,

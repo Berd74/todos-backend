@@ -84,15 +84,12 @@ func main() {
 
 		fmt.Println(collections)
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": fmt.Sprintf("Failed to select collections: %v", err),
-			})
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			response.SendError(c, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"collections": collections,
-		})
+		response.SendOk(c, collections)
 	})
 
 	router.POST("/collection", verifyToken, func(c *gin.Context) {
@@ -123,6 +120,7 @@ func main() {
 		err := database.DeleteCollection(collectionId, userIdString)
 
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
 			return
 		}
