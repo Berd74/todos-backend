@@ -91,7 +91,6 @@ func main() {
 			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
 			return
 		}
-		fmt.Println("5")
 
 		response.SendOk(c, collection)
 	})
@@ -117,11 +116,11 @@ func main() {
 
 	router.DELETE("/collection/:id", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
+		role, _ := c.Get("role")
 		userIdString := userId.(string)
-
 		collectionId := c.Param("id")
 
-		err := database.DeleteCollection(collectionId, userIdString)
+		collection, err := database.SelectCollection(collectionId)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -129,7 +128,24 @@ func main() {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		if userId != collection.UserId && role != Admin {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
+			return
+		}
+
+		if err != nil {
+			response.SendError(c, err)
+		}
+
+		err = database.DeleteCollection(collectionId, userIdString)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			response.SendError(c, err)
+			return
+		}
+
+		response.SendOk(c, collection)
 	})
 
 	router.Run()
