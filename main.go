@@ -2,17 +2,19 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
+	"io"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"todoBackend/database"
 	"todoBackend/response"
+	"todoBackend/utils"
 )
 
 type Role int
@@ -44,24 +46,24 @@ func init() {
 func main() {
 	router := gin.Default()
 
-	router.GET("/allCollections", verifyToken, func(c *gin.Context) {
+	router.GET("/ownCollections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
-		role, _ := c.Get("role")
-		userIdsString := c.Query("userIds")
-		var userIds []string
+		//role, _ := c.Get("role")
+		//userIdsString := c.Query("userIds")
+		var userIds = []string{userIdString}
 
-		if userIdsString != "" {
-			if role != Admin {
-				c.JSON(http.StatusForbidden, gin.H{
-					"error": "Only Admin cannot use userIds",
-				})
-				return
-			}
-			userIds = strings.Split(userIdsString, " ")
-		} else {
-			userIds = []string{userIdString}
-		}
+		//if userIdsString != "" {
+		//	if role != Admin {
+		//		c.JSON(http.StatusForbidden, gin.H{
+		//			"error": "Only Admin cannot use userIds",
+		//		})
+		//		return
+		//	}
+		//	userIds = strings.Split(userIdsString, " ")
+		//} else {
+		//	userIds = []string{userIdString}
+		//}
 
 		collections, err := database.SelectCollections(userIds)
 
@@ -95,13 +97,12 @@ func main() {
 		response.SendOk(c, collection)
 	})
 
-	type CollectionInput struct {
-		Description string `json:"description"`
-		Name        string `json:"name"`
-	}
-
 	router.POST("/collection", verifyToken, func(c *gin.Context) {
-		var body CollectionInput
+		var body struct {
+			Description string `json:"description"`
+			Name        string `json:"name"`
+		}
+
 		if err := c.BindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -116,7 +117,6 @@ func main() {
 			return
 		}
 		response.SendOk(c, collection)
-
 	})
 
 	router.DELETE("/collection/:id", verifyToken, func(c *gin.Context) {
@@ -138,10 +138,6 @@ func main() {
 			return
 		}
 
-		if err != nil {
-			response.SendError(c, err)
-		}
-
 		err = database.DeleteCollection(collectionId, userIdString)
 
 		if err != nil {
@@ -153,7 +149,66 @@ func main() {
 		response.SendOk(c, collection)
 	})
 
-	router.DELETE("/allCollections", verifyToken, func(c *gin.Context) {
+	router.PUT("/collection/:id", verifyToken, func(c *gin.Context) {
+		userId, _ := c.Get("userId")
+		role, _ := c.Get("role")
+		collectionId := c.Param("id")
+		collection, errSelect := database.SelectCollection(collectionId)
+
+		if errSelect != nil {
+			response.SendError(c, errSelect)
+			return
+		}
+
+		if userId != collection.UserId && role != Admin {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
+			return
+		}
+
+		var bodyBytes, bodyBytesErr = io.ReadAll(c.Request.Body)
+		if bodyBytesErr != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: bodyBytesErr.Error()}.Send(c)
+			return
+		}
+
+		var bodyFull map[string]interface{}
+		var body struct {
+			Description string `json:"description"`
+			Name        string `json:"name"`
+		}
+
+		if err := json.Unmarshal(bodyBytes, &bodyFull); err != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
+			return
+		}
+
+		if err := json.Unmarshal(bodyBytes, &body); err != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
+			return
+		}
+
+		if unexpectedKeys := utils.GetUnexpectedKeys(&bodyFull, []string{"name", "description"}); unexpectedKeys != nil {
+			response.ErrorResponse{Code: http.StatusBadRequest, Message: fmt.Sprintf("unexpected keys in body:%v", unexpectedKeys)}.Send(c)
+			return
+		}
+
+		updateErr := database.UpdateCollection(collectionId, body.Name, body.Description)
+		if updateErr != nil {
+			fmt.Println("1")
+			response.SendError(c, updateErr)
+			return
+		}
+
+		collection, errSelect = database.SelectCollection(collectionId)
+		if errSelect != nil {
+			response.SendError(c, errSelect)
+			return
+		}
+
+		response.SendOk(c, collection)
+	})
+
+	router.DELETE("/ownCollections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
 
