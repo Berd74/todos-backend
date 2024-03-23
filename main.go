@@ -173,8 +173,8 @@ func main() {
 
 		var bodyFull map[string]interface{}
 		var body struct {
-			Description string `json:"description"`
-			Name        string `json:"name"`
+			Description *string `json:"description,omitempty"`
+			Name        *string `json:"name,omitempty"`
 		}
 
 		if err := json.Unmarshal(bodyBytes, &bodyFull); err != nil {
@@ -194,7 +194,6 @@ func main() {
 
 		updateErr := database.UpdateCollection(collectionId, body.Name, body.Description)
 		if updateErr != nil {
-			fmt.Println("1")
 			response.SendError(c, updateErr)
 			return
 		}

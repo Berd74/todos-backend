@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"todoBackend/model"
-	"todoBackend/utils"
 )
 
 func CreateCollection(name string, description string, userId string) (*model.Collection, error) {
@@ -15,7 +14,7 @@ func CreateCollection(name string, description string, userId string) (*model.Co
 		CollectionId: collectionId,
 		Name:         name,
 		UserId:       userId,
-		Description:  utils.StringOrNil(description),
+		Description:  description,
 	}
 
 	m, err := spanner.InsertOrUpdateStruct("collection", newCollection)

@@ -6,23 +6,19 @@ import (
 	"fmt"
 	"net/http"
 	"todoBackend/response"
-	"todoBackend/utils"
 )
 
-func UpdateCollection(collectionId string, name string, description string) error {
-
-	name_ := utils.StringOrNil(name)
-	description_ := utils.StringOrNil(description)
+func UpdateCollection(collectionId string, name *string, description *string) error {
 
 	columns := []string{"collection_id"}
 	values := []any{collectionId}
-	if name_ != nil {
+	if name != nil {
 		columns = append(columns, "name")
-		values = append(values, *name_)
+		values = append(values, name)
 	}
-	if description_ != nil {
+	if description != nil {
 		columns = append(columns, "description")
-		values = append(values, *description_)
+		values = append(values, description)
 	}
 
 	if len(columns) <= 1 {
