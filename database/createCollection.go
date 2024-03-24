@@ -7,7 +7,7 @@ import (
 	"todoBackend/model"
 )
 
-func CreateCollection(name string, description string, userId string) (*model.Collection, error) {
+func CreateCollection(name string, description *string, userId string) (*model.Collection, error) {
 	collectionId := uuid.New().String() // Generate a new UUID.
 
 	newCollection := &model.Collection{

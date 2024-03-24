@@ -14,7 +14,6 @@ import (
 	"os"
 	"todoBackend/database"
 	"todoBackend/response"
-	"todoBackend/utils"
 )
 
 type Role int
@@ -45,6 +44,8 @@ func init() {
 
 func main() {
 	router := gin.Default()
+
+	// COLLECTIONS
 
 	router.GET("/ownCollections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
@@ -110,7 +111,7 @@ func main() {
 
 		userId := c.GetString("userId")
 
-		collection, err := database.CreateCollection(body.Name, body.Description, userId)
+		collection, err := database.CreateCollection(body.Name, &body.Description, userId)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
@@ -172,27 +173,13 @@ func main() {
 		}
 
 		var bodyFull map[string]interface{}
-		var body struct {
-			Description *string `json:"description,omitempty"`
-			Name        *string `json:"name,omitempty"`
-		}
 
 		if err := json.Unmarshal(bodyBytes, &bodyFull); err != nil {
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
 			return
 		}
 
-		if err := json.Unmarshal(bodyBytes, &body); err != nil {
-			response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
-			return
-		}
-
-		if unexpectedKeys := utils.GetUnexpectedKeys(&bodyFull, []string{"name", "description"}); unexpectedKeys != nil {
-			response.ErrorResponse{Code: http.StatusBadRequest, Message: fmt.Sprintf("unexpected keys in body:%v", unexpectedKeys)}.Send(c)
-			return
-		}
-
-		updateErr := database.UpdateCollection(collectionId, body.Name, body.Description)
+		updateErr := database.UpdateCollection(collectionId, bodyFull)
 		if updateErr != nil {
 			response.SendError(c, updateErr)
 			return
