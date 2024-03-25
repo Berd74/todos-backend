@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	firebase "firebase.google.com/go/v4"
@@ -11,10 +12,10 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"todoBackend/database"
 	"todoBackend/model"
 	"todoBackend/response"
+	"todoBackend/utils"
 )
 
 type Role int
@@ -56,7 +57,6 @@ func main() {
 		collections, err := database.SelectCollections(userIds)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
 			return
 		}
@@ -72,7 +72,6 @@ func main() {
 		collection, err := database.SelectCollection(collectionId)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
 			return
 		}
@@ -92,7 +91,7 @@ func main() {
 		}
 
 		if err := c.BindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.SendError(c, err)
 			return
 		}
 
@@ -100,7 +99,6 @@ func main() {
 
 		collection, err := database.CreateCollection(body.Name, body.Description, userId)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
 			return
 		}
@@ -116,7 +114,6 @@ func main() {
 		collection, err := database.SelectCollection(collectionId)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
 			return
 		}
@@ -129,7 +126,6 @@ func main() {
 		err = database.DeleteCollection(collectionId, userIdString)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
 			return
 		}
@@ -188,7 +184,6 @@ func main() {
 		num, err := database.DeleteAllCollections(userIdString)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.SendError(c, err)
 			return
 		}
@@ -201,17 +196,51 @@ func main() {
 	// TO-DO
 
 	router.POST("/todo", verifyToken, func(c *gin.Context) {
+
+		// check if unexpected keys in json
+		if bodyBytes, bodyBytesErr := io.ReadAll(c.Request.Body); bodyBytesErr != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: bodyBytesErr.Error()}.Send(c)
+			return
+		} else {
+			var bodyFull map[string]interface{}
+			if err := json.Unmarshal(bodyBytes, &bodyFull); err != nil {
+				response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
+				return
+			}
+			expectedKeysInJSON := []string{"name", "collectionId", "description", "done", "dueDate"}
+			if unexpectedKeys := utils.GetUnexpectedKeys(&bodyFull, expectedKeysInJSON); unexpectedKeys != nil {
+				response.ErrorResponse{Code: http.StatusBadRequest, Message: fmt.Sprintf("unexpected keys in body:%v", unexpectedKeys)}.Send(c)
+				return
+			}
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Restore the body for future reads
+		}
+
+		// check if fields have correct type
 		var body model.CreateTodoArgs
-		if err := c.BindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err := c.ShouldBindJSON(&body); err != nil {
+			response.ErrorResponse{http.StatusBadRequest, err.Error()}.Send(c)
 			return
 		}
-		fmt.Println("body")
-		fmt.Println(body)
 
+		// custom validations
+		if len(body.Name) < 3 {
+			response.ErrorResponse{http.StatusBadRequest, "'name' must be set and have at least 3 characters"}.Send(c)
+			return
+		}
+		if body.CollectionId == "" {
+			response.ErrorResponse{http.StatusBadRequest, "'collectionId' must be set"}.Send(c)
+			return
+		}
+
+		// [DB] check if user owns this collection
+		if _, errSelect := database.SelectCollection(body.CollectionId); errSelect != nil {
+			response.SendError(c, errSelect)
+			return
+		}
+
+		// create
 		todo, err := database.CreateTodo(body)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.ErrorResponse{http.StatusInternalServerError, err.Error()}.Send(c)
 			return
 		}

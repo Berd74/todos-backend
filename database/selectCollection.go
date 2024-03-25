@@ -42,7 +42,7 @@ func SelectCollection(collectionId string) (*model.Collection, error) {
 	}
 
 	if collection == nil {
-		return nil, response.ErrorResponse{Code: http.StatusNotFound, Message: "item with this id has not been found"}
+		return nil, response.ErrorResponse{Code: http.StatusNotFound, Message: "collection with this id has not been found"}
 
 	}
 
