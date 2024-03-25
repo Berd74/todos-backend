@@ -8,7 +8,7 @@ import (
 )
 
 func CreateCollection(name string, description *string, userId string) (*model.Collection, error) {
-	collectionId := uuid.New().String() // Generate a new UUID.
+	collectionId := uuid.New().String()
 
 	newCollection := &model.Collection{
 		CollectionId: collectionId,

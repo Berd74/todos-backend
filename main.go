@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"todoBackend/database"
+	"todoBackend/model"
 	"todoBackend/response"
 )
 
@@ -50,21 +51,7 @@ func main() {
 	router.GET("/ownCollections", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
-		//role, _ := c.Get("role")
-		//userIdsString := c.Query("userIds")
 		var userIds = []string{userIdString}
-
-		//if userIdsString != "" {
-		//	if role != Admin {
-		//		c.JSON(http.StatusForbidden, gin.H{
-		//			"error": "Only Admin cannot use userIds",
-		//		})
-		//		return
-		//	}
-		//	userIds = strings.Split(userIdsString, " ")
-		//} else {
-		//	userIds = []string{userIdString}
-		//}
 
 		collections, err := database.SelectCollections(userIds)
 
@@ -100,8 +87,8 @@ func main() {
 
 	router.POST("/collection", verifyToken, func(c *gin.Context) {
 		var body struct {
-			Description string `json:"description"`
-			Name        string `json:"name"`
+			Description *string `json:"description,omitempty"`
+			Name        string  `json:"name"`
 		}
 
 		if err := c.BindJSON(&body); err != nil {
@@ -111,7 +98,7 @@ func main() {
 
 		userId := c.GetString("userId")
 
-		collection, err := database.CreateCollection(body.Name, &body.Description, userId)
+		collection, err := database.CreateCollection(body.Name, body.Description, userId)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
@@ -209,6 +196,26 @@ func main() {
 		response.SendOk(c, map[string]any{
 			"removedItems": num,
 		})
+	})
+
+	// TO-DO
+
+	router.POST("/todo", verifyToken, func(c *gin.Context) {
+		var body model.CreateTodoArgs
+		if err := c.BindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		fmt.Println("body")
+		fmt.Println(body)
+
+		todo, err := database.CreateTodo(body)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			response.ErrorResponse{http.StatusInternalServerError, err.Error()}.Send(c)
+			return
+		}
+		response.SendOk(c, todo)
 	})
 
 	router.Run()
