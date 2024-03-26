@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"todoBackend/database"
 	"todoBackend/model"
 	"todoBackend/response"
@@ -105,32 +106,32 @@ func main() {
 		response.SendOk(c, collection)
 	})
 
-	router.DELETE("/collection/:id", verifyToken, func(c *gin.Context) {
+	router.DELETE("/collection/", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
-		role, _ := c.Get("role")
+		//role, _ := c.Get("role")
 		userIdString := userId.(string)
-		collectionId := c.Param("id")
+		ids := c.Query("ids")
+		collectionIds := strings.Split(ids, ",")
 
-		collection, err := database.SelectCollection(collectionId)
-
-		if err != nil {
-			response.SendError(c, err)
-			return
-		}
-
-		if userId != collection.UserId && role != Admin {
-			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
-			return
-		}
-
-		err = database.DeleteCollection(collectionId, userIdString)
+		test, err := database.AreUserCollections(userIdString, collectionIds)
 
 		if err != nil {
 			response.SendError(c, err)
 			return
 		}
+		if !test {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "Provided collection that doesn't belong to you"}.Send(c)
+		}
 
-		response.SendOk(c, collection)
+		amount, err := database.DeleteCollection(collectionIds, userIdString)
+		if err != nil {
+			response.SendError(c, err)
+			return
+		}
+
+		response.SendOk(c, map[string]any{
+			"removedItems": amount,
+		})
 	})
 
 	router.PUT("/collection/:id", verifyToken, func(c *gin.Context) {
@@ -177,23 +178,42 @@ func main() {
 		response.SendOk(c, collection)
 	})
 
-	router.DELETE("/ownCollections", verifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		userIdString := userId.(string)
-
-		num, err := database.DeleteAllCollections(userIdString)
-
-		if err != nil {
-			response.SendError(c, err)
-			return
-		}
-
-		response.SendOk(c, map[string]any{
-			"removedItems": num,
-		})
-	})
-
 	// TO-DO
+
+	router.DELETE("/todo", verifyToken, func(c *gin.Context) {
+		userId, _ := c.Get("userId")
+		//role, _ := c.Get("role")
+		//userIdString := userId.(string)
+		//collectionId := c.Param("id")
+		ids := c.Param("ids")
+		ids2 := c.Query("ids")
+		ids3 := strings.Split(ids2, ",")
+		fmt.Println(userId)
+		fmt.Println(ids)
+		fmt.Println(ids2)
+		fmt.Println(ids3)
+		//
+		//collection, err := database.SelectCollection(collectionId)
+		//
+		//if err != nil {
+		//	response.SendError(c, err)
+		//	return
+		//}
+		//
+		//if userId != collection.UserId && role != Admin {
+		//	response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
+		//	return
+		//}
+		//
+		//err = database.DeleteCollection(collectionId, userIdString)
+		//
+		//if err != nil {
+		//	response.SendError(c, err)
+		//	return
+		//}
+
+		response.SendOk(c, "ok")
+	})
 
 	router.POST("/todo", verifyToken, func(c *gin.Context) {
 
