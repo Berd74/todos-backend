@@ -15,12 +15,12 @@ func SelectTodos(clientId string, todoIds *[]string, userIds *[]string, collecti
 	var query = ""
 	var conditions = 0
 	var addConditionPrefix = func() {
-		conditions++
 		if conditions == 0 {
 			query += "WHERE "
 		} else {
 			query += "AND "
 		}
+		conditions++
 	}
 
 	query += `SELECT t.todo_id, t.name, t.description, t.done, t.collection_id, t.due_date, t.created_at, c.user_id FROM todo t 

@@ -15,15 +15,15 @@ func SelectCollection(clientId string, userIds *[]string, collectionIds *[]strin
 	var query = ""
 	var conditions = 0
 	var addConditionPrefix = func() {
-		conditions++
 		if conditions == 0 {
 			query += "WHERE "
 		} else {
 			query += "AND "
 		}
+		conditions++
 	}
 
-	query += `SELECT c.collection_id, c.name, c.description, c.user_id FROM collection c`
+	query += `SELECT c.collection_id, c.name, c.description, c.user_id FROM collection c `
 
 	if userIds != nil {
 		addConditionPrefix()
@@ -32,10 +32,11 @@ func SelectCollection(clientId string, userIds *[]string, collectionIds *[]strin
 	}
 	if collectionIds != nil {
 		addConditionPrefix()
-		query += "t.collection_id IN UNNEST(@collectionIds) "
+		query += "c.collection_id IN UNNEST(@collectionIds) "
 		params["collectionIds"] = *collectionIds
 	}
 	query += ";"
+	fmt.Println(query)
 
 	stmt := spanner.Statement{
 		SQL:    query,
@@ -61,8 +62,11 @@ func SelectCollection(clientId string, userIds *[]string, collectionIds *[]strin
 		if err := row.ToStruct(&val); err != nil {
 			return nil, err
 		}
+		fmt.Println("xxx")
+		fmt.Println(clientId)
+		fmt.Println(val.UserId)
 		if clientId != val.UserId {
-			return nil, response.ErrorResponse{http.StatusUnauthorized, "You do not have access to one of the selected todo."}
+			return nil, response.ErrorResponse{http.StatusUnauthorized, "You do not have access to one of the selected collection."}
 		}
 		collections = append(collections, val)
 	}
