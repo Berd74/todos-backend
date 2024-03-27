@@ -1,4 +1,4 @@
-package main
+package utils
 
 // insertAt inserts substring sub into string str at the specified position pos
 func insertAt(str string, sub string, pos int) string {

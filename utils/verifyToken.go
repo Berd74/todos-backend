@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"context"
@@ -6,10 +6,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"todoBackend/firebase"
+	"todoBackend/types"
 )
 
 // Middleware to verify Firebase token and add custom fields to the context
-func verifyToken(c *gin.Context) {
+func VerifyToken(c *gin.Context) {
 	token := c.GetHeader("Authorization")
 
 	if strings.HasPrefix(token, "Bearer ") {
@@ -22,7 +24,7 @@ func verifyToken(c *gin.Context) {
 		return
 	}
 
-	decodedToken, err := authClient.VerifyIDToken(context.Background(), token)
+	decodedToken, err := firebase.AuthClient.VerifyIDToken(context.Background(), token)
 
 	if err != nil {
 		log.Printf("error verifying ID token: %v\n", err)
@@ -36,7 +38,7 @@ func verifyToken(c *gin.Context) {
 
 	// Set custom request fields
 	c.Set("userId", userId)
-	c.Set("role", User)
+	c.Set("role", types.User)
 
 	c.Next()
 }

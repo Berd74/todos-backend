@@ -63,7 +63,7 @@ func AddToUpdate(keyName string, targetType string, changes map[string]interface
 	case "bool":
 		castedVal, ok = value.(bool)
 	default:
-		fmt.Println("Unsupported target type")
+		fmt.Println("Unsupported target types")
 	}
 	if !ok {
 		// if nil we want to add nil to DB

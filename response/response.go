@@ -28,7 +28,7 @@ func SendError(c *gin.Context, err error) {
 		return // No error, so just return
 	}
 
-	// Attempt to type assert 'err' to 'ErrorResponse'
+	// Attempt to types assert 'err' to 'ErrorResponse'
 	if errResp, ok := err.(ErrorResponse); ok {
 		// 'err' is an ErrorResponse, so use its 'Code' and 'Message'
 		c.JSON(errResp.Code, gin.H{"error": errResp.Message})
