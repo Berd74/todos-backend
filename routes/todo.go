@@ -20,11 +20,12 @@ func Todo(rg *gin.RouterGroup) {
 		userId, _ := c.Get("userId")
 		userIdString := userId.(string)
 
+		todoIds := utils.SplitOrNil(utils.StringOrNil(c.Query("todoIds")))
 		userIds := utils.SplitOrNil(utils.StringOrNil(c.Query("userIds")))
 		collectionIds := utils.SplitOrNil(utils.StringOrNil(c.Query("collectionIds")))
 		done := utils.StringToBoolOrNil(c.Query("done"))
 
-		todos, err := database.SelectTodos(userIdString, userIds, collectionIds, done)
+		todos, err := database.SelectTodos(userIdString, todoIds, userIds, collectionIds, done)
 
 		if err != nil {
 			response.SendError(c, err)

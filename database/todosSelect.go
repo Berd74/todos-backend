@@ -10,7 +10,7 @@ import (
 	"todoBackend/response"
 )
 
-func SelectTodos(clientId string, userIds *[]string, collectionIds *[]string, done *bool) ([]model.Todo, error) {
+func SelectTodos(clientId string, todoIds *[]string, userIds *[]string, collectionIds *[]string, done *bool) ([]model.Todo, error) {
 	var params = make(map[string]any)
 	var query = ""
 	var conditions = 0
@@ -26,6 +26,11 @@ func SelectTodos(clientId string, userIds *[]string, collectionIds *[]string, do
 	query += `SELECT t.todo_id, t.name, t.description, t.done, t.collection_id, t.due_date, t.created_at, c.user_id FROM todo t 
     INNER JOIN collection c ON t.collection_id = c.collection_id `
 
+	if todoIds != nil {
+		addConditionPrefix()
+		query += "t.todo_id IN UNNEST(@todoIds) "
+		params["todoIds"] = *todoIds
+	}
 	if userIds != nil {
 		addConditionPrefix()
 		query += "c.user_id IN UNNEST(@userIds) "
@@ -114,9 +119,6 @@ func AreUserTodos(userId string, todoIds []string) (bool, error) {
 	}
 
 	amount = int(_amount)
-	fmt.Println("1111")
-	fmt.Println(len(todoIds))
-	fmt.Println(amount)
 
 	return amount == len(todoIds), nil
 }
