@@ -12,7 +12,7 @@ import (
 	"todoBackend/utils"
 )
 
-func Collectionn(rg *gin.RouterGroup) {
+func Collection(rg *gin.RouterGroup) {
 
 	rg.GET("/:id", utils.VerifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")

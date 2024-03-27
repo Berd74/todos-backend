@@ -9,7 +9,7 @@ func main() {
 	router := gin.Default()
 
 	routes.Todo(router.Group("/todo"))
-	routes.Collectionn(router.Group("/collection"))
+	routes.Collection(router.Group("/collection"))
 
 	// COLLECTIONS
 
