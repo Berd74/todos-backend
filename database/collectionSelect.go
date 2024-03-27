@@ -3,27 +3,50 @@ package database
 import (
 	"cloud.google.com/go/spanner"
 	"context"
+	"fmt"
 	"google.golang.org/api/iterator"
 	"net/http"
 	"todoBackend/model"
 	"todoBackend/response"
 )
 
-func SelectCollection(collectionId string) (*model.Collection, error) {
+func SelectCollection(clientId string, userIds *[]string, collectionIds *[]string) ([]model.Collection, error) {
+	var params = make(map[string]any)
+	var query = ""
+	var conditions = 0
+	var addConditionPrefix = func() {
+		conditions++
+		if conditions == 0 {
+			query += "WHERE "
+		} else {
+			query += "AND "
+		}
+	}
+
+	query += `SELECT c.collection_id, c.name, c.description, c.user_id FROM collection c`
+
+	if userIds != nil {
+		addConditionPrefix()
+		query += "c.user_id IN UNNEST(@userIds) "
+		params["userIds"] = *userIds
+	}
+	if collectionIds != nil {
+		addConditionPrefix()
+		query += "t.collection_id IN UNNEST(@collectionIds) "
+		params["collectionIds"] = *collectionIds
+	}
+	query += ";"
+
 	stmt := spanner.Statement{
-		SQL: `SELECT c.collection_id, c.name, c.description, c.user_id 
-              FROM collection c 
-              WHERE c.collection_id = @collectionId`,
-		Params: map[string]interface{}{
-			"collectionId": collectionId,
-		},
+		SQL:    query,
+		Params: params,
 	}
 
 	ctx := context.Background()
 	iter := GetDatabase().Single().Query(ctx, stmt)
 	defer iter.Stop()
 
-	var collection *model.Collection
+	var collections []model.Collection
 
 	for {
 		row, err := iter.Next()
@@ -33,18 +56,47 @@ func SelectCollection(collectionId string) (*model.Collection, error) {
 		if err != nil {
 			return nil, err
 		}
-		var col model.Collection
+		var val model.Collection
 
-		if err := row.ToStruct(&col); err != nil {
+		if err := row.ToStruct(&val); err != nil {
 			return nil, err
 		}
-		collection = &col
+		if clientId != val.UserId {
+			return nil, response.ErrorResponse{http.StatusUnauthorized, "You do not have access to one of the selected todo."}
+		}
+		collections = append(collections, val)
 	}
 
-	if collection == nil {
-		return nil, response.ErrorResponse{Code: http.StatusNotFound, Message: "collection with this id has not been found"}
+	return collections, nil
+}
 
+func AreUserCollections(userId string, collectionIds []string) (bool, error) {
+	fmt.Println(collectionIds)
+	stmt := spanner.Statement{
+		SQL: `SELECT COUNT(1) FROM collection WHERE user_id = @userId AND collection_id IN UNNEST(@collectionIds)`,
+		Params: map[string]any{
+			"userId":        userId,
+			"collectionIds": collectionIds,
+		},
 	}
 
-	return collection, nil
+	ctx := context.Background()
+	iter := GetDatabase().Single().Query(ctx, stmt)
+	defer iter.Stop()
+
+	row, err := iter.Next()
+	if err != nil {
+		// Correct handling of Next() error.
+		return false, fmt.Errorf("query failed: %v", err)
+	}
+
+	var _amount int64
+	var amount int
+	if err := row.Column(0, &_amount); err != nil {
+		// Error handling for reading the result.
+		return false, fmt.Errorf("failed to read result: %v", err)
+	}
+	amount = int(_amount)
+
+	return amount == len(collectionIds), nil
 }

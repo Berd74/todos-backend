@@ -17,8 +17,7 @@ import (
 func Todo(rg *gin.RouterGroup) {
 
 	rg.GET("/", utils.VerifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		userIdString := userId.(string)
+		userIdString := c.GetString("userId")
 
 		todoIds := utils.SplitOrNil(utils.StringOrNil(c.Query("todoIds")))
 		userIds := utils.SplitOrNil(utils.StringOrNil(c.Query("userIds")))
@@ -36,8 +35,7 @@ func Todo(rg *gin.RouterGroup) {
 	})
 
 	rg.DELETE("/", utils.VerifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		userIdString := userId.(string)
+		userIdString := c.GetString("userId")
 		_todoIds := c.Query("todoIds")
 		todoIds := strings.Split(_todoIds, ",")
 
@@ -64,6 +62,7 @@ func Todo(rg *gin.RouterGroup) {
 	})
 
 	rg.POST("/", utils.VerifyToken, func(c *gin.Context) {
+		userIdString := c.GetString("userId")
 
 		// check if unexpected keys in json
 		if bodyBytes, bodyBytesErr := io.ReadAll(c.Request.Body); bodyBytesErr != nil {
@@ -101,7 +100,7 @@ func Todo(rg *gin.RouterGroup) {
 		}
 
 		// [DB] check if user owns this collection
-		if _, errSelect := database.SelectCollection(body.CollectionId); errSelect != nil {
+		if _, errSelect := database.AreUserCollections(userIdString, []string{body.CollectionId}); errSelect != nil {
 			response.SendError(c, errSelect)
 			return
 		}

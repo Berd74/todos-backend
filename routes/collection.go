@@ -8,26 +8,21 @@ import (
 	"strings"
 	"todoBackend/database"
 	"todoBackend/response"
-	"todoBackend/types"
 	"todoBackend/utils"
 )
 
 func Collection(rg *gin.RouterGroup) {
 
-	rg.GET("/:id", utils.VerifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		role, _ := c.Get("role")
-		collectionId := c.Param("id")
+	rg.GET("/", utils.VerifyToken, func(c *gin.Context) {
+		userIdString := c.GetString("userId")
 
-		collection, err := database.SelectCollection(collectionId)
+		userIds := utils.SplitOrNil(utils.StringOrNil(c.Query("userIds")))
+		collectionIds := utils.SplitOrNil(utils.StringOrNil(c.Query("collectionIds")))
+
+		collection, err := database.SelectCollection(userIdString, userIds, collectionIds)
 
 		if err != nil {
 			response.SendError(c, err)
-			return
-		}
-
-		if userId != collection.UserId && role != types.Admin {
-			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
 			return
 		}
 
@@ -56,9 +51,7 @@ func Collection(rg *gin.RouterGroup) {
 	})
 
 	rg.DELETE("/", utils.VerifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		//role, _ := c.Get("role")
-		userIdString := userId.(string)
+		userIdString := c.GetString("userId")
 		ids := c.Query("ids")
 		collectionIds := strings.Split(ids, ",")
 
@@ -85,18 +78,16 @@ func Collection(rg *gin.RouterGroup) {
 	})
 
 	rg.PUT("/:id", utils.VerifyToken, func(c *gin.Context) {
-		userId, _ := c.Get("userId")
-		role, _ := c.Get("role")
-		collectionId := c.Param("id")
-		collection, errSelect := database.SelectCollection(collectionId)
+		userIdString := c.GetString("userId")
 
+		collectionId := c.Param("id")
+		test, errSelect := database.AreUserCollections(userIdString, []string{collectionId})
 		if errSelect != nil {
 			response.SendError(c, errSelect)
 			return
 		}
-
-		if userId != collection.UserId && role != types.Admin {
-			response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
+		if !test {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "Provided collection ID that doesn't belong to you or does not exist."}.Send(c)
 			return
 		}
 
@@ -119,7 +110,7 @@ func Collection(rg *gin.RouterGroup) {
 			return
 		}
 
-		collection, errSelect = database.SelectCollection(collectionId)
+		collection, errSelect := database.SelectCollection(userIdString, &[]string{collectionId}, nil)
 		if errSelect != nil {
 			response.SendError(c, errSelect)
 			return
