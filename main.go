@@ -120,7 +120,8 @@ func main() {
 			return
 		}
 		if !test {
-			response.ErrorResponse{Code: http.StatusForbidden, Message: "Provided collection that doesn't belong to you"}.Send(c)
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "Provided collection ID that doesn't belong to you or does not exist."}.Send(c)
+			return
 		}
 
 		amount, err := database.DeleteCollection(collectionIds, userIdString)
@@ -180,39 +181,50 @@ func main() {
 
 	// TO-DO
 
+	router.GET("/todo/", verifyToken, func(c *gin.Context) {
+		userId, _ := c.Get("userId")
+		userIdString := userId.(string)
+
+		userIds := utils.SplitOrNil(utils.StringOrNil(c.Query("userIds")))
+		collectionIds := utils.SplitOrNil(utils.StringOrNil(c.Query("collectionIds")))
+		done := utils.StringToBoolOrNil(c.Query("done"))
+
+		todos, err := database.SelectTodos(userIdString, userIds, collectionIds, done)
+
+		if err != nil {
+			response.SendError(c, err)
+			return
+		}
+
+		response.SendOk(c, todos)
+	})
+
 	router.DELETE("/todo", verifyToken, func(c *gin.Context) {
 		userId, _ := c.Get("userId")
-		//role, _ := c.Get("role")
-		//userIdString := userId.(string)
-		//collectionId := c.Param("id")
-		ids := c.Param("ids")
-		ids2 := c.Query("ids")
-		ids3 := strings.Split(ids2, ",")
-		fmt.Println(userId)
-		fmt.Println(ids)
-		fmt.Println(ids2)
-		fmt.Println(ids3)
-		//
-		//collection, err := database.SelectCollection(collectionId)
-		//
-		//if err != nil {
-		//	response.SendError(c, err)
-		//	return
-		//}
-		//
-		//if userId != collection.UserId && role != Admin {
-		//	response.ErrorResponse{Code: http.StatusForbidden, Message: "This collection doesn't belong to you"}.Send(c)
-		//	return
-		//}
-		//
-		//err = database.DeleteCollection(collectionId, userIdString)
-		//
-		//if err != nil {
-		//	response.SendError(c, err)
-		//	return
-		//}
+		userIdString := userId.(string)
+		_todoIds := c.Query("todoIds")
+		todoIds := strings.Split(_todoIds, ",")
 
-		response.SendOk(c, "ok")
+		test, err := database.AreUserTodos(userIdString, todoIds)
+
+		if err != nil {
+			response.SendError(c, err)
+			return
+		}
+		if !test {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "One of the todo ID that doesn't belong to you or does not exist."}.Send(c)
+			return
+		}
+
+		amount, err := database.DeleteTodo(todoIds)
+		if err != nil {
+			response.SendError(c, err)
+			return
+		}
+
+		response.SendOk(c, map[string]any{
+			"removedItems": amount,
+		})
 	})
 
 	router.POST("/todo", verifyToken, func(c *gin.Context) {
