@@ -57,7 +57,7 @@ func SelectTodos(clientId string, todoIds *[]string, userIds *[]string, collecti
 	iter := GetDatabase().Single().Query(ctx, stmt)
 	defer iter.Stop()
 
-	var todos []model.Todo
+	todos := make([]model.Todo, 0)
 
 	for {
 		row, err := iter.Next()

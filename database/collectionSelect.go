@@ -47,7 +47,7 @@ func SelectCollection(clientId string, userIds *[]string, collectionIds *[]strin
 	iter := GetDatabase().Single().Query(ctx, stmt)
 	defer iter.Stop()
 
-	var collections []model.Collection
+	collections := make([]model.Collection, 0)
 
 	for {
 		row, err := iter.Next()

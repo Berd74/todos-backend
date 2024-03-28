@@ -110,13 +110,13 @@ func Collection(rg *gin.RouterGroup) {
 			return
 		}
 
-		collection, errSelect := database.SelectCollection(userIdString, &[]string{collectionId}, nil)
+		collection, errSelect := database.SelectCollection(userIdString, nil, &[]string{collectionId})
 		if errSelect != nil {
 			response.SendError(c, errSelect)
 			return
 		}
 
-		response.SendOk(c, collection)
+		response.SendOk(c, collection[0])
 	})
 
 }
