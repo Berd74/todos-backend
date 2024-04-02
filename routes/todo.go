@@ -114,4 +114,47 @@ func Todo(rg *gin.RouterGroup) {
 		response.SendOk(c, todo)
 	})
 
+	rg.PUT("/:id", utils.VerifyToken, func(c *gin.Context) {
+		userIdString := c.GetString("userId")
+
+		todoId := c.Param("id")
+		test, errSelect := database.AreUserTodos(userIdString, []string{todoId})
+		if errSelect != nil {
+			response.SendError(c, errSelect)
+			return
+		}
+
+		if !test {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "Provided todo ID that doesn't belong to you or does not exist."}.Send(c)
+			return
+		}
+
+		var bodyBytes, bodyBytesErr = io.ReadAll(c.Request.Body)
+		if bodyBytesErr != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: bodyBytesErr.Error()}.Send(c)
+			return
+		}
+
+		var bodyFull map[string]interface{}
+
+		if err := json.Unmarshal(bodyBytes, &bodyFull); err != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
+			return
+		}
+
+		updateErr := database.UpdateTodo(userIdString, todoId, bodyFull)
+		if updateErr != nil {
+			response.SendError(c, updateErr)
+			return
+		}
+
+		collection, errSelect := database.SelectTodos(userIdString, &[]string{todoId}, nil, nil, nil)
+		if errSelect != nil {
+			response.SendError(c, errSelect)
+			return
+		}
+
+		response.SendOk(c, collection[0])
+	})
+
 }
