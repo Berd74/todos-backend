@@ -157,4 +157,67 @@ func Todo(rg *gin.RouterGroup) {
 		response.SendOk(c, collection[0])
 	})
 
+	rg.PUT("/move/:id", utils.VerifyToken, func(c *gin.Context) {
+		clientId := c.GetString("userId")
+		todoId := c.Param("id")
+
+		// checking body
+		var bodyBytes, bodyBytesErr = io.ReadAll(c.Request.Body)
+		if bodyBytesErr != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: bodyBytesErr.Error()}.Send(c)
+			return
+		}
+		var bodyFull map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &bodyFull); err != nil {
+			response.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()}.Send(c)
+			return
+		}
+		var lookFor = []string{"after", "before"}
+		if len(bodyFull) == 0 {
+			response.ErrorResponse{http.StatusBadRequest, `you need to provide "after" or "before" value to move item`}.Send(c)
+			return
+		}
+		if unexpectedKeys := utils.GetUnexpectedKeys(&bodyFull, lookFor); unexpectedKeys != nil {
+			response.ErrorResponse{Code: http.StatusBadRequest, Message: fmt.Sprintf("unexpected keys in body:%v", unexpectedKeys)}.Send(c)
+			return
+		}
+		if len(bodyFull) > 1 {
+			response.ErrorResponse{http.StatusBadRequest, `only one parameter can be set: "after" or "before"`}.Send(c)
+			return
+		}
+
+		// getting parameters
+		var isAfter = bodyFull["after"] != nil
+		var targetId string
+		if isAfter {
+			targetId = bodyFull["after"].(string)
+		} else {
+			targetId = bodyFull["before"].(string)
+		}
+
+		if targetId == todoId {
+			response.ErrorResponse{http.StatusBadRequest, `ids of the items must be different`}.Send(c)
+			return
+		}
+
+		// checking collections ids
+		test, errSelect := database.AreUserTodos(clientId, []string{todoId, targetId})
+		if errSelect != nil {
+			response.SendError(c, errSelect)
+			return
+		}
+		if !test {
+			response.ErrorResponse{Code: http.StatusForbidden, Message: "Provided todo ID that doesn't belong to you or does not exist."}.Send(c)
+			return
+		}
+
+		moveErr := database.MoveTodo(clientId, todoId, targetId, isAfter)
+		if moveErr != nil {
+			response.SendError(c, moveErr)
+			return
+		}
+
+		response.SendOk(c, "ok")
+	})
+
 }
