@@ -8,8 +8,14 @@ import (
 	"todoBackend/model"
 )
 
-func CreateTodo(args model.CreateTodoArgs) (*model.Todo, error) {
+func CreateTodo(clientId string, args model.CreateTodoArgs) (*model.Todo, error) {
 	todoId := uuid.New().String() // Generate a new UUID.
+
+	num, err := GetNewestTodoRank(clientId, args.CollectionId)
+
+	if err != nil {
+		return nil, err
+	}
 
 	var isDone bool
 	if args.Done == nil || *args.Done == false {
@@ -26,6 +32,7 @@ func CreateTodo(args model.CreateTodoArgs) (*model.Todo, error) {
 		Done:         isDone,
 		DueDate:      args.DueDate,
 		CreatedAt:    time.Now(),
+		Rank: num + 1,
 	}
 
 	m, err := spanner.InsertOrUpdateStruct("todo", newTodo)

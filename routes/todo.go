@@ -62,7 +62,7 @@ func Todo(rg *gin.RouterGroup) {
 	})
 
 	rg.POST("/", utils.VerifyToken, func(c *gin.Context) {
-		userIdString := c.GetString("userId")
+		clientId := c.GetString("userId")
 
 		// check if unexpected keys in json
 		if bodyBytes, bodyBytesErr := io.ReadAll(c.Request.Body); bodyBytesErr != nil {
@@ -100,13 +100,13 @@ func Todo(rg *gin.RouterGroup) {
 		}
 
 		// [DB] check if user owns this collection
-		if _, errSelect := database.AreUserCollections(userIdString, []string{body.CollectionId}); errSelect != nil {
+		if _, errSelect := database.AreUserCollections(clientId, []string{body.CollectionId}); errSelect != nil {
 			response.SendError(c, errSelect)
 			return
 		}
 
 		// create
-		todo, err := database.CreateTodo(body)
+		todo, err := database.CreateTodo(clientId, body)
 		if err != nil {
 			response.ErrorResponse{http.StatusInternalServerError, err.Error()}.Send(c)
 			return

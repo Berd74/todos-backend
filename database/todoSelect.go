@@ -122,3 +122,37 @@ func AreUserTodos(userId string, todoIds []string) (bool, error) {
 
 	return amount == len(todoIds), nil
 }
+
+func GetNewestTodoRank(clientId string, collectionId string) (int64, error) {
+	stmt := spanner.Statement{
+		SQL: `SELECT t.rank FROM todo t 
+              INNER JOIN collection c ON t.collection_id = c.collection_id
+              WHERE c.user_id = @userId AND t.collection_id = @collectionId ORDER BY c.rank DESC LIMIT 1`,
+		Params: map[string]any{
+			"userId":       clientId,
+			"collectionId": collectionId,
+		},
+	}
+
+	ctx := context.Background()
+	iter := GetDatabase().Single().Query(ctx, stmt)
+	defer iter.Stop()
+
+	row, err := iter.Next()
+	if err == iterator.Done {
+		return 0, nil
+	}
+
+	if err != nil {
+		// Correct handling of Next() error.
+		return 0, fmt.Errorf("query failed: %v", err)
+	}
+
+	var amount *int64
+	if err := row.Column(0, &amount); err != nil {
+		// Error handling for reading the result.
+		return 0, fmt.Errorf("failed to read result: %v", err)
+	}
+
+	return *amount, nil
+}

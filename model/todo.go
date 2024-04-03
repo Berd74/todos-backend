@@ -10,6 +10,7 @@ type Todo struct {
 	Done         bool       `spanner:"done" json:"done"`
 	DueDate      *time.Time `spanner:"due_date" json:"dueDate"`
 	CreatedAt    time.Time  `spanner:"created_at" json:"createdAt"`
+	Rank         int64      `spanner:"rank" json:"rank"`
 }
 
 type SelectTodoDbResponse struct {
@@ -21,6 +22,7 @@ type SelectTodoDbResponse struct {
 	Done         bool       `spanner:"done" json:"done"`
 	DueDate      *time.Time `spanner:"due_date" json:"dueDate"`
 	CreatedAt    time.Time  `spanner:"created_at" json:"createdAt"`
+	Rank         int64      `spanner:"rank" json:"rank"`
 }
 
 type CreateTodoArgs struct {
