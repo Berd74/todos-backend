@@ -104,3 +104,33 @@ func AreUserCollections(userId string, collectionIds []string) (bool, error) {
 
 	return amount == len(collectionIds), nil
 }
+
+func GetNewestCollectionRank(userId string) (int64, error) {
+	stmt := spanner.Statement{
+		SQL: `SELECT c.rank FROM collection c WHERE user_id = @userId ORDER BY c.rank DESC LIMIT 1`,
+		Params: map[string]any{
+			"userId": userId,
+		},
+	}
+
+	ctx := context.Background()
+	iter := GetDatabase().Single().Query(ctx, stmt)
+	defer iter.Stop()
+
+	row, err := iter.Next()
+	if err == iterator.Done {
+		return 0, nil
+	}
+	if err != nil {
+		// Correct handling of Next() error.
+		return 0, fmt.Errorf("query failed: %v", err)
+	}
+
+	var amount *int64
+	if err := row.Column(0, &amount); err != nil {
+		// Error handling for reading the result.
+		return 0, fmt.Errorf("failed to read result: %v", err)
+	}
+
+	return *amount, nil
+}

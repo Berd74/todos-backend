@@ -5,4 +5,5 @@ type Collection struct {
 	Name         string  `spanner:"name" json:"name"`
 	UserId       string  `spanner:"user_id" json:"userId"`
 	Description  *string `spanner:"description" json:"description"`
+	Rank         int64   `spanner:"rank" json:"rank"`
 }
