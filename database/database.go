@@ -12,9 +12,9 @@ import (
 
 var database *spanner.Client
 
-func init() {
+func InitDatabase() {
 	// Load .env file
-	err := godotenv.Load() // This will look for a .env file in the current directory
+	err := godotenv.Load("./.env") // This will look for a .env file in the current directory
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -36,7 +36,7 @@ func init() {
 
 	// Creates a Spanner client.
 	ctx := context.Background()
-	client, err := spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName), option.WithCredentialsFile("firebase-adminsdk.json"))
+	client, err := spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName), option.WithCredentialsFile("./firebase-adminsdk.json"))
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}

@@ -12,8 +12,8 @@ import (
 var app *firebase.App
 var AuthClient *auth.Client
 
-func init() {
-	opt := option.WithCredentialsFile("firebase-adminsdk.json")
+func InitFirebase() {
+	opt := option.WithCredentialsFile("./firebase-adminsdk.json")
 
 	var err error
 	app, err = firebase.NewApp(context.Background(), nil, opt)
