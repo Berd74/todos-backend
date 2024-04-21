@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"todoBackend/database"
@@ -45,6 +46,7 @@ func Collection(rg *gin.RouterGroup) {
 
 		collection, err := database.CreateCollection(body.Name, body.Description, clientId)
 		if err != nil {
+			log.Fatal(err)
 			response.ErrorResponse{Code: http.StatusInternalServerError, Message: "Internal error"}.Send(c)
 			return
 		}

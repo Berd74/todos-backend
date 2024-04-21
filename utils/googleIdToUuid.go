@@ -6,7 +6,7 @@ func insertAt(str string, sub string, pos int) string {
 }
 
 // googleIdToUuid formats a given string by inserting hyphens at specific positions and appending a key
-func googleIdToUuid(id string) string {
+func GoogleIdToUuid(id string) string {
 	key := "todo" // must have 4 characters
 	id = insertAt(id, "-", 20)
 	id = insertAt(id, "-", 16)

@@ -17,7 +17,7 @@ func SendRequest(httpMethod string, url string, body *map[string]any) *httptest.
 		jsonBody = json
 	}
 	req, _ := http.NewRequest(httpMethod, url, bytes.NewBuffer(jsonBody))
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+*Token)
 	w := httptest.NewRecorder()
 	Router.ServeHTTP(w, req)
 	return w

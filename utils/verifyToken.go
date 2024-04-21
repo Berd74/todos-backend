@@ -34,7 +34,7 @@ func VerifyToken(c *gin.Context) {
 	}
 
 	// Assuming googleIdToUuid is a function you've implemented that converts a Google ID to your UUID format
-	userId := googleIdToUuid(decodedToken.UID) // Replace with actual function call
+	userId := GoogleIdToUuid(decodedToken.UID) // Replace with actual function call
 
 	// Set custom request fields
 	c.Set("userId", userId)
