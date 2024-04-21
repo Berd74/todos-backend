@@ -13,6 +13,7 @@ import (
 var database *spanner.Client
 
 func InitDatabase() {
+
 	// Load .env file
 	err := godotenv.Load("./.env") // This will look for a .env file in the current directory
 	if err != nil {
@@ -36,7 +37,14 @@ func InitDatabase() {
 
 	// Creates a Spanner client.
 	ctx := context.Background()
-	client, err := spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName), option.WithCredentialsFile("./firebase-adminsdk.json"))
+	var client *spanner.Client
+
+	// Check if running against the emulator
+	if os.Getenv("SPANNER_EMULATOR_HOST") != "" {
+		client, err = spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName))
+	} else {
+		client, err = spanner.NewClient(ctx, fmt.Sprintf("projects/%s/instances/%s/databases/%s", projectId, instanceName, databaseName), option.WithCredentialsFile("./firebase-adminsdk.json"))
+	}
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
